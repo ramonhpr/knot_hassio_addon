@@ -1,0 +1,7 @@
+#!/usr/bin/with-contenv bashio
+
+$(bashio::log.info "Starting babel tower")
+ls /run/s6/legacy-services/babeltower/internal/config
+ENV=development RABBITMQ_URL=amqp://guest:guest@localhost USERS_HOSTNAME=localhost AUTH_HOSTNAME=localhost THINGS_HOSTNAME=localhost /usr/bin/babeltower
+
+sleep infinity
