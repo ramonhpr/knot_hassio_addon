@@ -1,0 +1,32 @@
+#!/usr/bin/with-contenv bashio
+
+export POSTGRES_PORT=5432
+$(bashio::net.wait_for $POSTGRES_PORT)
+psql -U "postgres" postgres -c "ALTER USER postgres WITH PASSWORD 'mainflux';"
+psql -U postgres -c "CREATE DATABASE auth"
+psql -U postgres -c "CREATE DATABASE users"
+psql -U postgres -c "CREATE DATABASE things"
+
+$(bashio::log.info "Starting mainflux services")
+export MF_AUTH_HTTP_PORT=8183
+export MF_AUTH_GRPC_PORT=8181
+export MF_USERS_HTTP_PORT=8180
+export MF_THINGS_HTTP_PORT=8182
+MF_AUTH_LOG_LEVEL=debug MF_AUTH_DB_USER=postgres MF_AUTH_SECRET=auth /usr/bin/auth &
+echo $! > /tmp/auth.pid
+MF_USERS_LOG_LEVEL=debug MF_USERS_DB_USER=postgres MF_AUTH_GRPC_URL=localhost:$MF_AUTH_GRPC_PORT MF_USERS_ADMIN_EMAIL=mainflux@mainflux.com MF_USERS_ADMIN_PASSWORD=mainflux /usr/bin/users &
+echo $! > /tmp/users.pid
+MF_THINGS_LOG_LEVEL=debug MF_THINGS_AUTH_HTTP_PORT=8888 MF_THINGS_AUTH_GRPC_PORT=8989 MF_THINGS_DB_USER=postgres MF_THINGS_SECRET=secret MF_USERS_URL=localhost:$MF_USERS_HTTP_PORT MF_AUTH_GRPC_URL=localhost:$MF_AUTH_GRPC_PORT /usr/bin/things &
+echo $! > /tmp/things.pid
+
+$(bashio::net.wait_for $MF_AUTH_HTTP_PORT)
+$(bashio::log.info "auth started")
+
+$(bashio::net.wait_for $MF_USERS_HTTP_PORT)
+$(bashio::log.info "users started")
+
+$(bashio::net.wait_for $MF_THINGS_HTTP_PORT)
+$(bashio::log.info "things started")
+
+$(bashio::log.info "Mainflux services started")
+sleep infinity
