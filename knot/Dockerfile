@@ -63,8 +63,13 @@ COPY --from=babeltower-builder /go/src/github.com/CESARBR/knot-babeltower/app-li
 COPY --from=babeltower-builder /go/src/github.com/CESARBR/knot-babeltower/internal/ /etc/services.d/babeltower/internal
 COPY --from=babeltower-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
+ENV MF_AUTH_HTTP_PORT=8183
+ENV MF_AUTH_GRPC_PORT=8181
+ENV MF_USERS_HTTP_PORT=8180
+ENV MF_THINGS_HTTP_PORT=8182
+
 # Copy root filesystem
 COPY rootfs /
-RUN chmod +x /etc/services.d/mainflux/*
+RUN chmod +x /etc/services.d/mf-*/*
 RUN chmod +x /etc/services.d/babeltower/*
 RUN chmod +x /etc/cont-init.d/*

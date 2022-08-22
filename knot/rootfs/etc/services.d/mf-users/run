@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv bashio
+
+$(bashio::log.info "Starting mainflux users")
+
+MF_USERS_LOG_LEVEL=debug MF_USERS_DB_USER=postgres MF_AUTH_GRPC_URL=localhost:$MF_AUTH_GRPC_PORT MF_USERS_ADMIN_EMAIL=mainflux@mainflux.com MF_USERS_ADMIN_PASSWORD=mainflux /usr/bin/users
+$(bashio::log.error "users exited with code $?")

@@ -1,0 +1,6 @@
+#!/usr/bin/with-contenv bashio
+
+$(bashio::log.info "Starting mainflux auth")
+
+MF_AUTH_LOG_LEVEL=debug MF_AUTH_DB_USER=postgres MF_AUTH_SECRET=auth /usr/bin/auth
+$(bashio::log.error "auth exited with code $?")
