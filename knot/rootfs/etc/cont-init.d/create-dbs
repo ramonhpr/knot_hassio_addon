@@ -1,0 +1,13 @@
+#!/usr/bin/with-contenv bashio
+
+su postgres -c 'pg_ctl start -D /var/lib/postgresql/data'
+while ! psql -U "postgres" postgres -c "" 2> /dev/null; do
+	sleep 1
+done
+
+export POSTGRES_PORT=5432
+$(bashio::net.wait_for $POSTGRES_PORT)
+psql -U "postgres" postgres -c "ALTER USER postgres WITH PASSWORD 'mainflux';"
+psql -U postgres -c "CREATE DATABASE auth"
+psql -U postgres -c "CREATE DATABASE users"
+psql -U postgres -c "CREATE DATABASE things"

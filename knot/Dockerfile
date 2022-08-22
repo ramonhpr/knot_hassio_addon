@@ -66,5 +66,5 @@ COPY --from=babeltower-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs
 # Copy root filesystem
 COPY rootfs /
 RUN chmod +x /etc/services.d/mainflux/*
-RUN chmod +x /etc/services.d/postgres/*
 RUN chmod +x /etc/services.d/babeltower/*
+RUN chmod +x /etc/cont-init.d/*
