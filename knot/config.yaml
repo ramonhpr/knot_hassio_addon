@@ -11,3 +11,4 @@ arch:
   - amd64
   - i386
 init: true
+image: "ghcr.io/ramonhpr/{arch}-addon-knot"
