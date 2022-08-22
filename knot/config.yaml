@@ -1,6 +1,6 @@
 # https://developers.home-assistant.io/docs/add-ons/configuration#add-on-config
 name: KNoT add-on
-version: "0.0.1"
+version: "0.0.2"
 slug: knot
 description: KNoT add-on
 url: "https://github.com/ramonhpr/knot_hassio_addon/tree/main/knot"
@@ -10,5 +10,4 @@ arch:
   - aarch64
   - amd64
   - i386
-init: true
 image: "ghcr.io/ramonhpr/{arch}-addon-knot"
