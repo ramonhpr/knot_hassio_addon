@@ -1,14 +1,37 @@
 ARG BUILD_FROM
+ARG BUILD_ARCH
 FROM golang:1.16-alpine AS babeltower-builder
-
-ARG GOARCH
-ARG GOARM
 
 # Install build utilities
 RUN apk --no-cache add --virtual .build-deps \
     bash \
     make \
     git
+
+WORKDIR /go/src/github.com/
+
+# Clone and build mainflux services
+ENV MAINFLUX_VERSION=0.12.1
+RUN mkdir -p /go/src/github.com/mainflux
+RUN wget -q -O- https://github.com/mainflux/mainflux/archive/$MAINFLUX_VERSION.tar.gz|tar xz -C /go/src/github.com/mainflux --strip-components=1
+
+
+FROM babeltower-builder AS builder-armhf
+ENV GOARCH=arm
+ENV GOARM=6
+FROM babeltower-builder AS builder-armv7
+ENV GOARCH=arm
+ENV GOARM=7
+FROM babeltower-builder AS builder-aarch64
+ENV GOARCH=arm64
+FROM babeltower-builder AS builder-amd64
+ENV GOARCH=amd64
+FROM babeltower-builder AS builder-i386
+ENV GOARCH=386
+
+FROM builder-$BUILD_ARCH AS builder
+WORKDIR /go/src/github.com/mainflux
+RUN make auth && make users && make things
 
 # Set the Current Working Directory inside the container
 WORKDIR /go/src/github.com/CESARBR/
@@ -30,16 +53,11 @@ RUN apk --no-cache add \
 RUN go get github.com/ahmetb/govvv
 
 # Build the application
-RUN make bin
+RUN make GOARCH=$GOARCH GOARM=$GOARM bin
+RUN mv /go/src/github.com/CESARBR/knot-babeltower/app-linux-$GOARCH /go/src/github.com/CESARBR/knot-babeltower/app
 
 # Remove build dependencies
 RUN apk del .build-deps
-
-
-# Mainflux
-FROM mainflux/auth:0.12.1 as mainflux-auth
-FROM mainflux/things:0.12.1 as mainflux-things
-FROM mainflux/users:0.12.1 as mainflux-users
 
 FROM $BUILD_FROM
 
@@ -55,12 +73,12 @@ RUN su postgres -c 'mkdir -p /var/lib/postgresql/data'
 RUN su postgres -c 'chmod 0700 /var/lib/postgresql/data'
 RUN su postgres -c 'initdb -D /var/lib/postgresql/data'
 
-COPY --from=mainflux-auth /exe /usr/bin/auth
-COPY --from=mainflux-things /exe /usr/bin/things
-COPY --from=mainflux-users /exe /usr/bin/users
+COPY --from=builder /go/src/github.com/mainflux/build/mainflux-auth /usr/bin/auth
+COPY --from=builder /go/src/github.com/mainflux/build/mainflux-things /usr/bin/things
+COPY --from=builder /go/src/github.com/mainflux/build/mainflux-users /usr/bin/users
 
-COPY --from=babeltower-builder /go/src/github.com/CESARBR/knot-babeltower/app-linux-amd64 /usr/bin/babeltower
-COPY --from=babeltower-builder /go/src/github.com/CESARBR/knot-babeltower/internal/ /etc/services.d/babeltower/internal
+COPY --from=builder /go/src/github.com/CESARBR/knot-babeltower/app /usr/bin/babeltower
+COPY --from=builder /go/src/github.com/CESARBR/knot-babeltower/internal/ /etc/services.d/babeltower/internal
 COPY --from=babeltower-builder /etc/ssl/certs/ca-certificates.crt /etc/ssl/certs/
 
 ENV MF_AUTH_HTTP_PORT=8183
